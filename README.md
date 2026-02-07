@@ -48,16 +48,18 @@ The MCP server exposes two tools only:
 2. `analyze_logs`
 
 Recommended agent flow:
-1. Call `run_build` with `command` and project `cwd`.
+1. If (and only if) the task modified files in the target project, call `run_build` with `command` and project `cwd`.
 2. Pass `stdout` and `stderr` from the result to `analyze_logs`.
 3. Use only the first error returned by `analyze_logs`.
+4. If no files were modified, skip verification.
 
 ## MCP Build Verification Flow (Example)
 
 ```text
 # MCP Build Verification Flow
 
-Run this verification flow after every task that changes code in this project.
+Run this verification flow only after tasks that change files in this project.
+Do not run it for Q&A or other non-editing tasks.
 
 1. Call the `run_build` tool with:
    - `command`: the build/test command (e.g., `npm run --workspace backend build` or `npm run --workspace frontend build`)
