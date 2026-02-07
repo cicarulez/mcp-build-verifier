@@ -2,6 +2,16 @@ import type { ParsedError } from "../tools/analyzeLogs.js";
 
 const ERROR_LINE = /\b(error|failed|failure)\b/i;
 const WARNING_LINE = /\bwarning\b/i;
+const NON_FATAL_PATTERNS = [
+  /^\[baseline-browser-mapping\]/i,
+  /\bdeprecated\b/i,
+  /\bexceeded maximum budget\b/i,
+  /\brules skipped due to selector errors\b/i,
+];
+
+function isNonFatalLine(line: string): boolean {
+  return NON_FATAL_PATTERNS.some((pattern) => pattern.test(line));
+}
 
 export function findGenericError(
   logs: string,
@@ -24,11 +34,15 @@ export function findGenericError(
   }
 
   if (options.hasStderr && options.stderrLogs) {
+    if (!ERROR_LINE.test(options.stderrLogs)) {
+      return null;
+    }
     const stderrLines = options.stderrLogs.split(/\r?\n/);
     const first = stderrLines.find((line) => {
       const trimmed = line.trim();
       if (!trimmed) return false;
       if (WARNING_LINE.test(trimmed)) return false;
+      if (isNonFatalLine(trimmed)) return false;
       return true;
     });
     if (first) {
